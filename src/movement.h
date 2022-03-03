@@ -1,7 +1,7 @@
 #ifndef MOVEMENT_H
 #define MOVEMENT_H
 
-void forward();
+void forward(float threshold);
 void rotate(float degree);
 void aroundObstacle();
 

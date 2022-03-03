@@ -10,7 +10,7 @@ extern float gyroZ, gyroAngleZ, gyroErrorZ;
 
 //constants
 extern const float turnDegree;
-extern const int motorSpeed;
+extern const int motorLeft, motorRight;
 extern const float captureDist;
 
 //motors

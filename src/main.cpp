@@ -31,27 +31,33 @@ void setup() {
   //Serial.println("Gyro calibrated");
   accelgyro.setThreshold(1); //Fiddle with this more
   Serial.println("Finished setup");
-  delay(4000);
+  delay(5000);
 }
 
 bool turnedRight = false;
 float timeTurned = 0.0;
 
+float timeSound = 0.0;
+
 void loop() {
   // put your main code here, to run repeatedly:
     getYaw();
-    readUltrasonicSensors();
-    // Serial.print("Left: ");
-    // Serial.print(leftDist);
-    // Serial.print(" Front: ");
-    // Serial.print(frontDist);
-    // Serial.print(" Right: ");
-    // Serial.println(rightDist);
-
-    if (frontDist < 25 || leftDist < 15 || rightDist < 15) {
+    if (millis() - timeSound > 250) {
+      readUltrasonicSensors();
+      timeSound = millis();
+    }
+    //   Serial.print("Left: ");
+    //   Serial.print(leftDist);
+    //   Serial.print(" Front: ");
+    //   Serial.print(frontDist);
+    //   Serial.print(" Right: ");
+    //   Serial.println(rightDist);
+    // }
+    // rotate(90);
+    if (frontDist < 20) {
       aroundObstacle();
     }
     else {
-      forward();
+      forward(20.0);
     }
 }

@@ -14,7 +14,8 @@ float gyroAngleZ = 0.0;
 float gyroErrorZ = 0.0;
 
 const float turnDegree = 0.0;
-const int motorSpeed = 125;
+const int motorLeft = 120;
+const int motorRight = 125;
 const float captureDist = 0.0;
 
 const int ENA = 44;
