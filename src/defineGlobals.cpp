@@ -25,6 +25,14 @@ const int ENB = 46;
 const int IN3 = 10;
 const int IN4 = 11;
 
+const int leftServoPin = 12;
+const int rightServoPin = 13;
+
+float dropoff_x = 0.0;
+float dropoff_y = 0.0;
+float dropoff_z = 0.0;
+float objecty = 0.0;
+
 const int ultrasonicSensors[3][2] = {{2,3}, {4,5}, {6,7}};
 const int servo = 9;
 

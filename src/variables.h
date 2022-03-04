@@ -22,10 +22,16 @@ extern const int IN3;
 extern const int IN4;
 
 //servos
-const int leftServoPin = 12;
-const int rightServoPin = 13;
+const int leftServoPin;
+const int rightServoPin;
 Servo leftServo;
 Servo rightServo;
+
+//object values
+float dropoff_x;
+float dropoff_y;
+float dropoff_z;
+float object_y;
 
 //left, middle, right
 extern const int ultrasonicSensors[3][2];
