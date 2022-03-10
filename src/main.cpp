@@ -21,6 +21,10 @@ void setup() {
   pinMode(IN1, OUTPUT); pinMode(IN2, OUTPUT);
   pinMode(IN3, OUTPUT); pinMode(IN4, OUTPUT);
   pinMode(ENA, OUTPUT); pinMode(ENB, OUTPUT);
+  leftServo.attach(leftServoPin);
+  rightServo.attach(rightServoPin);
+  leftServo.write(0);
+  rightServo.write(0);
   Serial.println("Pins set");
 
   while(!accelgyro.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G))
