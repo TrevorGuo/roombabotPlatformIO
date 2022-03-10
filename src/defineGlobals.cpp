@@ -14,18 +14,18 @@ float gyroAngleZ = 0.0;
 float gyroErrorZ = 0.0;
 
 const float turnDegree = 0.0;
-const int motorLeft = 120;
-const int motorRight = 125;
+const int motorSpeed = 150;
 const float captureDist = 0.0;
 
-const int ENA = 44;
+const int ENA = 10;
 const int IN1 = 8;
 const int IN2 = 9;
-const int ENB = 46;
-const int IN3 = 10;
-const int IN4 = 11;
+const int ENB = 11;
+const int IN3 = 12;
+const int IN4 = 13;
 
 const int ultrasonicSensors[3][2] = {{2,3}, {4,5}, {6,7}};
-const int servo = 9;
+const int leftServo = 12;
+const int rightServo = 13;
 
 MPU6050 accelgyro;

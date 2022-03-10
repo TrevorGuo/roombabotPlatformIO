@@ -1,6 +1,7 @@
 #include "variables.h"
 #include "sensors.h"
 #include "movement.h"
+#include <CircularBuffer.h>
 
 /* const int MPU = 0x68; // MPU6050 I2C address
 
@@ -8,110 +9,199 @@ float yaw = 0;
 float gyroZ, gyroAngleZ, gyroErrorZ;
 int c = 0; */
 
-void forward(float threshold) {  // move forward until an object is detected within a certain threshold distance
-    float currYaw = yaw;
-    readUltrasonicSensors();
-    int left, right = 0;
-    if (frontDist >= threshold) {   // arbitrary for now
-        analogWrite(ENA, motorLeft + left);
-        digitalWrite(IN1, LOW); //Motor INS are reversed, fix wiring
-        digitalWrite(IN2, HIGH);
-        analogWrite(ENB, motorRight + right);
-        digitalWrite(IN3, LOW);
-        digitalWrite(IN4, HIGH);
-    }
-    while (frontDist >= threshold && leftDist >= 5 && rightDist >= 5) {
-        readUltrasonicSensors();
-        // getYaw();
-        // if (currYaw - yaw > 1) {
-        //     left++;
-        //     analogWrite(ENA, motorLeft);
-        // }
-        // else if (yaw - currYaw > 1) {
-        //     right++;
-        //     analogWrite(ENA, motorRight);
-        // }
-    }
-    
+void stop() {
     analogWrite(ENA, LOW);
     analogWrite(ENB, LOW);
 }
+
+void forward(float threshold) {  // move forward until an object is detected within a certain threshold distance
+    readUltrasonicSensors();
+    if (frontDist >= threshold) {   // arbitrary for now
+        analogWrite(ENA, motorSpeed);
+        digitalWrite(IN1, LOW); //Motor INS are reversed, fix wiring
+        digitalWrite(IN2, HIGH);
+        analogWrite(ENB, motorSpeed);
+        digitalWrite(IN3, LOW);
+        digitalWrite(IN4, HIGH);
+    }
+    while (frontDist >= threshold && leftDist >= 7 && rightDist >= 7 || (leftDist + rightDist > 150)) {
+        readUltrasonicSensors();
+    }
+    
+    stop();
+}
+
+void reverse(float threshold) {
+    readUltrasonicSensors();
+    if (frontDist <= threshold) {
+        analogWrite(ENA, motorSpeed);
+        digitalWrite(IN1, HIGH); //Motor INS are reversed, fix wiring
+        digitalWrite(IN2, LOW);
+        analogWrite(ENB, motorSpeed);
+        digitalWrite(IN3, HIGH);
+        digitalWrite(IN4, LOW);
+    }
+    while (frontDist <= threshold && leftDist >= 5 && rightDist >= 5) {
+        readUltrasonicSensors();
+    }
+    
+    stop();
+}
+
+
 
 /* equivalent degree values:
  *  +/- 180º -> +/- 155º
  *  +/- 90º -> +/- 68º
  */ 
-void rotate(float degree) {
+
+
+
+void rotate(float degree) { //TODO: Motor stalls a bit
     float initYaw = getYaw();
     float finalYaw = initYaw + degree;
+    float adjustedSpeed;
+    double P = 2.5;
     if (degree > 0) {
-        while (finalYaw - getYaw() > 0) { // threshold 0.5º difference
-            analogWrite(ENA, motorLeft);
+        //Left
+        while (finalYaw - getYaw() > 0.5) { // threshold 0.5º difference
+            adjustedSpeed = min(abs(finalYaw - getYaw()) * P + motorSpeed, 255);
+
+            analogWrite(ENA, adjustedSpeed);
             digitalWrite(IN1, HIGH);
             digitalWrite(IN2, LOW);
-            analogWrite(ENB, motorRight);
+            analogWrite(ENB, adjustedSpeed);
             digitalWrite(IN3, LOW);
             digitalWrite(IN4, HIGH);
 
             getYaw();
-
-            Serial.println(yaw);
         }
-        // digitalWrite(IN1, LOW);
-        // digitalWrite(IN2, HIGH);
-        // digitalWrite(IN3, HIGH);
-        // digitalWrite(IN4, LOW);
-        // delay(5);
     }
     else {
-        while (getYaw() - finalYaw > 0) { 
-            analogWrite(ENA, motorLeft);
+        //Right
+        while (getYaw() - finalYaw > 0.5) { 
+            adjustedSpeed = min(abs(finalYaw - getYaw()) * P + motorSpeed, 255);
+            analogWrite(ENA, adjustedSpeed);
             digitalWrite(IN1, LOW);
             digitalWrite(IN2, HIGH);
-            analogWrite(ENB, motorRight);
+            analogWrite(ENB, adjustedSpeed);
             digitalWrite(IN3, HIGH);
             digitalWrite(IN4, LOW);
 
             getYaw();
-
-            Serial.println(yaw);
         }
-
-        // digitalWrite(IN1, HIGH);
-        // digitalWrite(IN2, LOW);
-        // digitalWrite(IN3, LOW);
-        // digitalWrite(IN4, HIGH);
-        // delay(5);
     }
-    analogWrite(ENA, LOW);
-    analogWrite(ENB, LOW);
+    stop();
 }
 
-// call when obstacle detected, assume leftDist != rightDist?
-void aroundObstacle() {
-    Serial.println("AVOIDING");
-    readUltrasonicSensors();
-    float deg = 0.0;
-    float farDist = max(leftDist, rightDist);
-    if (leftDist > rightDist) {
-        deg = 80; // change later
+void rotateSonic(float distance, bool left) {
+    Serial.print("Target: ");
+    Serial.println(distance);
+    int speed = 100;
+    if (left) {
+        Serial.print("Dist: ");
+        Serial.println(frontDist);
+        analogWrite(ENA, speed);
+        digitalWrite(IN1, HIGH);
+        digitalWrite(IN2, LOW);
+        analogWrite(ENB, speed);
+        digitalWrite(IN3, LOW);
+        digitalWrite(IN4, HIGH);
+        while (abs(frontDist - distance) > 5) { // threshold
+            Serial.print("Dist: ");
+            Serial.println(frontDist);
+            getYaw();
+            readUltrasonicSensors();
+        }
+        Serial.print("Dist: ");
+        Serial.println(frontDist);
+    }
+
+    stop();
+}
+
+void rotateToZero() {
+    float adjustedSpeed = 0;
+    double P = 2.5;
+    if (yaw < 0) {
+        while (getYaw() < -0.5) { // threshold 0.5º difference
+            adjustedSpeed = min(abs(getYaw()) * P + motorSpeed, 255);
+
+            analogWrite(ENA, adjustedSpeed);
+            digitalWrite(IN1, HIGH);
+            digitalWrite(IN2, LOW);
+            analogWrite(ENB, adjustedSpeed);
+            digitalWrite(IN3, LOW);
+            digitalWrite(IN4, HIGH);
+
+            getYaw();
+        }
     }
     else {
-        deg = -80;
+        while (getYaw() > 0.5) { 
+            adjustedSpeed = min(abs(getYaw()) * P + motorSpeed, 255);
+            analogWrite(ENA, adjustedSpeed);
+            digitalWrite(IN1, LOW);
+            digitalWrite(IN2, HIGH);
+            analogWrite(ENB, adjustedSpeed);
+            digitalWrite(IN3, HIGH);
+            digitalWrite(IN4, LOW);
+
+            getYaw();
+        }
     }
+    stop();
+}
 
-    Serial.print("Rotation: ");
-    Serial.println(deg);
+// call when obstacle detected
+void aroundObstacle() {
+   readUltrasonicSensors();
+   float deg = 40;
+   deg = leftDist > rightDist ? deg : -deg;
 
-    rotate(deg);
-    forward(15.0);
-    Serial.println("Rotating back");
-    //Move past block
-    rotate(-deg);
-    forward(30.0);
+   rotate(deg);
+   forward(15);
+   rotate(-deg);
+   readUltrasonicSensors();
+}
 
-    //Back to center
-    rotate(-deg);
-    forward((leftDist + rightDist) / 2);
-    rotate(deg);
+float findObject() {
+    rotateToZero();
+    readUltrasonicSensors();
+    float minFrontDist = frontDist;
+
+    int speed = 70;
+    analogWrite(ENA, speed);
+    digitalWrite(IN1, LOW);
+    digitalWrite(IN2, HIGH);
+    analogWrite(ENB, speed);
+    digitalWrite(IN3, HIGH);
+    digitalWrite(IN4, LOW);
+
+    while(getYaw() > -80) {
+        readUltrasonicSensors();
+        Serial.print("Dist: ");
+        Serial.println(frontDist);
+        if (frontDist < minFrontDist) {
+            minFrontDist = frontDist;
+        }
+    }
+    stop();
+    Serial.print("Target: ");
+    Serial.println(minFrontDist);
+    rotateSonic(minFrontDist, true);
+    return minFrontDist;
+}
+
+bool clearedObstacles() {
+    rotateToZero();
+    float left, right;
+    rotate(40);
+    readUltrasonicSensors();
+    left = leftDist;
+    rotate(-80);
+    readUltrasonicSensors();
+    right = rightDist;
+    rotate(40);
+    return left + right > 100;
 }
